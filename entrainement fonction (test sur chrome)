@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Ports USB</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9; /* Couleur de fond claire */
+            color: #333;
+        }
+        /* Style pour le logo */
+        .logo {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 60px;
+            height: 60px;
+            background-color: #007BFF; /* Bleu pour le fond du logo */
+            border-radius: 50%; /* Forme circulaire */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .container {
+            max-width: 600px;
+            margin: 100px auto 20px; /* Ajusté pour laisser de la place au logo */
+            padding: 20px;
+            background: #007BFF;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff; /* Bleu pour les titres */
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #007BFF; /* Couleur bleue */
+            color: rgb(2, 2, 2);
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3; /* Bleu plus foncé au survol */
+        }
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .output img {
+            max-width: 100px;
+            display: block;
+            margin: 10px auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: calc(100% - 20px);
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo en haut à gauche -->
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFNJ1Rs1F1uPrLYFC6QDwbRcO43yp5y6v66A&s" alt="Logo" class="logo">
+
+    <div class="container">
+        <h1>Gestion des Ports USB</h1>
+        <p>Remplissez vos coordonnées et cliquez sur le bouton pour envoyer vos informations et faire une demande de déblocage de ou des ports USB.</p>
+        
+        <!-- Formulaire pour entrer les coordonnées -->
+        <div class="form-group">
+            <label for="firstName">Prénom :</label>
+            <input type="text" id="firstName" placeholder="Entrez votre prénom">
+        </div>
+        <div class="form-group">
+            <label for="lastName">Nom :</label>
+            <input type="text" id="lastName" placeholder="Entrez votre nom">
+        </div>
+        <div class="form-group">
+            <label for="email">Adresse e-mail :</label>
+            <input type="email" id="email" placeholder="Entrez votre adresse e-mail">
+        </div>
+
+        <button id="connectButton">Rechercher un périphérique USB</button>
+        <div class="output" id="output">
+            <strong>Résultats :</strong> Aucun périphérique détecté pour le moment.
+        </div>
+    </div>
+
+    <script>
+        const connectButton = document.getElementById('connectButton');
+        const output = document.getElementById('output');
+
+        connectButton.addEventListener('click', async () => {
+            // Récupérer les valeurs des champs du formulaire
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            // Vérification des champs
+            if (!firstName || !lastName || !email) {
+                alert('Veuillez remplir tous les champs.');
+                return;
+            }
+
+            try {
+                // Rechercher un périphérique USB
+                const device = await navigator.usb.requestDevice({ filters: [] });
+                await device.open(); // Ouvrir une connexion au périphérique
+
+                // Détails du périphérique
+                const details = `
+                    <strong>Nom du périphérique :</strong> ${device.productName || "Inconnu"}<br>
+                    <strong>Fabricant :</strong> ${device.manufacturerName || "Inconnu"}<br>
+                    <strong>Numéro de série :</strong> ${device.serialNumber || "Non disponible"}
+                `;
+
+                // Afficher les détails dans la sortie
+                output.innerHTML = `
+                    <strong>Résultats :</strong><br>${details}
+                `;
+
+                // Préparer un e-mail
+                const subject = encodeURIComponent("Demande d'accès aux périphériques USB");
+                const body = encodeURIComponent(`
+Bonjour,
+
+Voici les coordonnées de l'utilisateur :
+
+Prénom : ${firstName}
+Nom : ${lastName}
+E-mail : ${email}
+
+Périphérique détecté :
+Nom du périphérique : ${device.productName || "Inconnu"}
+Fabricant : ${device.manufacturerName || "Inconnu"}
+Numéro de série : ${device.serialNumber || "Non disponible"}
+                `);
+                const mailtoLink = `mailto:samy.abbasse@gmail.com?subject=${subject}&body=${body}`;
+
+                // Ouvrir le client e-mail
+                window.location.href = mailtoLink;
+
+            } catch (error) {
+                output.innerHTML = `<strong>Erreur :</strong> ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
